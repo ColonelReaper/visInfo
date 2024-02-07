@@ -1,9 +1,8 @@
 // ==UserScript==
 // @name         Trocar Sets Aleatoriamente
-// @namespace    http://tampermonkey.net/
 // @version      1.1
 // @description  Troca aleatoriamente os sets em um intervalo de tempo definido pelo usuário
-// @author       Você
+// @author       Zuco
 // @match        https://www.fallensword.com/index.php*
 // @grant        GM_addStyle
 // ==/UserScript==
