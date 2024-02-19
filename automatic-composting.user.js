@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Automatic Composting
-// @version      2.8
+// @version      2.9
 // @description  Brew your pots without even looking at it!
 // @author       Zuco
 // @match        https://www.fallensword.com/index.php?cmd=composing*
@@ -330,7 +330,7 @@
                 // Button found and clickable, composing is done
                 console.log("Composing is over, restarting process.");
                 await discardAll(); // Discard all potions after composing
-                withdrawAndCompose(); // Repeat the process
+                withdrawAndCompose(goldCost); // Repeat the process
                 isComposingDone = true;
             } else {
                 // If the initial check is not completed, set the flag
