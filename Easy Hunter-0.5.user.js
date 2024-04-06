@@ -73,11 +73,14 @@
                 console.log('Element #actionList not found.');
             }
 
+            // Aguarda 0.6 segundos antes de verificar novamente
+            await sleep(600);
+            
             // Se não houver mais criaturas na lista, clique no botão de atualização
             refreshActionList();
 
-            // Aguarda 1 segundo antes de verificar novamente
-            await sleep(1000);
+            // Aguarda 0.5 segundos antes de prosseguir
+            await sleep(500);
         }
     }
 
