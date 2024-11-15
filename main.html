@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciamento de Encomendas de Cupcakes</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      width: 300px;
+    }
+    input, select, button, textarea {
+      margin-bottom: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+      width: 300px;
+    }
+    li {
+      background-color: #fff;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+    .order-actions {
+      display: flex;
+      gap: 5px;
+    }
+    .order-item {
+      cursor: pointer;
+    }
+    /* Estilo do modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 400px;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gerenciamento de Encomendas de Cupcakes</h1>
+  <form id="order-form">
+    <input type="text" id="requester" placeholder="Nome do Cliente" required>
+    <input type="number" id="quantity" placeholder="Quantidade" required min="1">
+    <select id="type" required>
+      <option value="cupcakes">Cupcakes</option>
+    </select>
+    <input type="date" id="delivery-date" placeholder="Data de Entrega" required>
+    <input type="time" id="delivery-time" placeholder="Hora de Entrega">
+    <label>
+      <input type="checkbox" id="gluten-free"> Sem Glúten
+    </label>
+    <label>
+      <input type="checkbox" id="lactose-free"> Sem Lactose
+    </label>
+    <textarea id="comments" placeholder="Comentários"></textarea>
+    <button type="submit">Adicionar Encomenda</button>
+  </form>
+  <ul id="orders-list"></ul>
+  <button id="show-completed-orders">Consultar encomendas concluídas</button>
+  <div id="completed-orders-section" class="hidden">
+    <input type="text" id="search-completed-orders" placeholder="Buscar encomendas concluídas por nome ou ID">
+    <ul id="completed-orders-list"></ul>
+  </div>
+
+  <!-- Modal de detalhes da encomenda -->
+  <div id="order-details-modal" class="modal">
+    <div class="modal-content">
+      <span id="modal-close" class="modal-close">&times;</span>
+      <h2>Detalhes da Encomenda</h2>
+      <p><strong>Nome do Cliente:</strong> <span id="modal-requester"></span></p>
+      <p><strong>Quantidade:</strong> <span id="modal-quantity"></span></p>
+      <p><strong>Tipo:</strong> <span id="modal-type"></span></p>
+      <p><strong>Data de Entrega:</strong> <span id="modal-delivery-date"></span></p>
+      <p><strong>Hora de Entrega:</strong> <span id="modal-delivery-time"></span></p>
+      <p><strong>Sem Glúten:</strong> <span id="modal-gluten-free"></span></p>
+      <p><strong>Sem Lactose:</strong> <span id="modal-lactose-free"></span></p>
+      <p><strong>Comentários:</strong> <span id="modal-comments"></span></p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const orderForm = document.getElementById('order-form');
+      const ordersList = document.getElementById('orders-list');
+      const completedOrdersSection = document.getElementById('completed-orders-section');
+      const completedOrdersList = document.getElementById('completed-orders-list');
+      const showCompletedOrdersBtn = document.getElementById('show-completed-orders');
+      const searchCompletedOrders = document.getElementById('search-completed-orders');
+      const orderDetailsModal = document.getElementById('order-details-modal');
+      const modalClose = document.getElementById('modal-close');
+
+      const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
+
+      const loadOrders = () => {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        ordersList.innerHTML = '';
+        orders.forEach(order => {
+          if (order.status !== 'Concluída') {
+            const orderItem = createOrderElement(order);
+            ordersList.appendChild(orderItem);
+          }
+        });
+      };
+
+      const loadCompletedOrders = () => {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        completedOrdersList.innerHTML = '';
+        orders.forEach(order => {
+          if (order.status === 'Concluída') {
+            const orderItem = createOrderElement(order);
+            completedOrdersList.appendChild(orderItem);
+          }
+        });
+      };
+
+      const saveOrder = (order) => {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        orders.push(order);
+        localStorage.setItem('orders', JSON.stringify(orders));
+        loadOrders();
+      };
+
+      const updateOrder = (updatedOrder) => {
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        const orderIndex = orders.findIndex(order => order.id === updatedOrder.id);
+        if (orderIndex > -1) {
+          orders[orderIndex] = updatedOrder;
+          localStorage.setItem('orders', JSON.stringify(orders));
+          loadOrders();
+          loadCompletedOrders();
+        }
+      };
+
+	const createOrderElement = (order) => {
+		const orderItem = document.createElement('li');
+		orderItem.classList.add('order-item'); // Adicionando a classe para identificar o item da lista
+		orderItem.textContent = `ID: ${order.id} - ${order.requester} - ${order.quantity} ${order.type} - Entrega: ${order.deliveryDate} ${order.deliveryTime}`;
+
+		// Criação do select para status
+		const actionsDiv = document.createElement('div');
+		actionsDiv.classList.add('order-actions');
+
+		const statusSelect = document.createElement('select');
+		statusSelect.innerHTML = `
+		  <option value="Em aberto" ${order.status === 'Em aberto' ? 'selected' : ''}>Em aberto</option>
+		  <option value="Processando" ${order.status === 'Processando' ? 'selected' : ''}>Processando</option>
+		  <option value="Concluída" ${order.status === 'Concluída' ? 'selected' : ''}>Concluída</option>
+		`;
+		statusSelect.addEventListener('change', (e) => {
+		  order.status = e.target.value;
+		  updateOrder(order);
+		});
+
+		actionsDiv.appendChild(statusSelect);
+		orderItem.appendChild(actionsDiv);
+
+		// Somente ao clicar no item da ordem, o popup será aberto
+		orderItem.addEventListener('click', (e) => {
+			// Verifica se o clique foi exatamente no item de ordem (evita cliques em elementos internos como statusSelect)
+			if (e.target === orderItem) {
+				openOrderDetails(order);
+			}
+		});
+
+		return orderItem;
+	};
+	
+      const openOrderDetails = (order) => {
+        document.getElementById('modal-requester').textContent = order.requester;
+        document.getElementById('modal-quantity').textContent = order.quantity;
+        document.getElementById('modal-type').textContent = order.type;
+        document.getElementById('modal-delivery-date').textContent = order.deliveryDate;
+        document.getElementById('modal-delivery-time').textContent = order.deliveryTime;
+        document.getElementById('modal-gluten-free').textContent = order.glutenFree ? 'Sim' : 'Não';
+        document.getElementById('modal-lactose-free').textContent = order.lactoseFree ? 'Sim' : 'Não';
+        document.getElementById('modal-comments').textContent = order.comments;
+
+        orderDetailsModal.style.display = 'flex';
+      };
+
+      modalClose.addEventListener('click', () => {
+        orderDetailsModal.style.display = 'none';
+      });
+
+      orderForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = generateId();
+        const requester = document.getElementById('requester').value;
+        const quantity = parseInt(document.getElementById('quantity').value);
+        const type = document.getElementById('type').value;
+        const deliveryDate = document.getElementById('delivery-date').value;
+        const deliveryTime = document.getElementById('delivery-time').value;
+        const glutenFree = document.getElementById('gluten-free').checked;
+        const lactoseFree = document.getElementById('lactose-free').checked;
+        const comments = document.getElementById('comments').value;
+        const status = 'Em aberto';
+
+        const currentDate = new Date().toISOString().split('T')[0];
+        if (deliveryDate < currentDate) {
+          alert('A data de entrega não pode ser anterior à data atual.');
+          return;
+        }
+
+        if (deliveryDate === currentDate) {
+          const now = new Date();
+          const currentTime = now.getHours() * 60 + now.getMinutes();
+          const deliveryHour = parseInt(deliveryTime.split(':')[0]);
+          const deliveryMinute = parseInt(deliveryTime.split(':')[1]);
+          const deliveryTimeInMinutes = deliveryHour * 60 + deliveryMinute;
+
+          const minimumDeliveryTime = currentTime + (1 + Math.floor(quantity / 24)) * 60;
+
+          if (deliveryTimeInMinutes < minimumDeliveryTime) {
+            alert('A hora de entrega deve ser pelo menos 2 horas a partir de agora e deve respeitar a regra de quantidade.');
+            return;
+          }
+        }
+
+        const order = { id, requester, quantity, type, deliveryDate, deliveryTime, glutenFree, lactoseFree, comments, status };
+        saveOrder(order);
+
+        orderForm.reset();
+      });
+
+      showCompletedOrdersBtn.addEventListener('click', () => {
+        completedOrdersSection.classList.toggle('hidden');
+        if (!completedOrdersSection.classList.contains('hidden')) {
+          loadCompletedOrders();
+        }
+      });
+
+      searchCompletedOrders.addEventListener('input', () => {
+        const query = searchCompletedOrders.value.toLowerCase();
+        const orders = JSON.parse(localStorage.getItem('orders')) || [];
+        completedOrdersList.innerHTML = '';
+        orders.forEach(order => {
+          if (order.status === 'Concluída' && (order.requester.toLowerCase().includes(query) || order.id.toLowerCase().includes(query))) {
+            const orderItem = createOrderElement(order);
+            completedOrdersList.appendChild(orderItem);
+          }
+        });
+      });
+
+      loadOrders();
+    });
+  </script>
+</body>
+</html>
